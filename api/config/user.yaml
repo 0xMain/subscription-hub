@@ -1,0 +1,9 @@
+package: userapi
+generate:
+  gin-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  include-tags:
+    - пользователь
+output: internal/http/gen/userapi/user.go

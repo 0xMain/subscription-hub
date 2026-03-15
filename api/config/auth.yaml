@@ -1,0 +1,9 @@
+package: authapi
+generate:
+  gin-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  include-tags:
+    - Аутентификация
+output: internal/http/gen/authapi/auth.go
