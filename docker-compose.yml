@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: subscription_hub_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: subscription_hub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/main/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
+
+  adminer:
+    image: adminer:latest
+    container_name: subscription_hub_adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-viewer
+    ports:
+      - "8082:8080"
+    environment:
+      - SWAGGER_JSON=/spec/spec.yaml
+    volumes:
+      - ./api:/spec
+
+volumes:
+  postgres_data:
