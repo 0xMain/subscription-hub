@@ -12,33 +12,32 @@ var (
 	ErrAccessDenied    = errors.New("недостаточно прав")
 )
 
-type roleGetter interface {
+type membershipFinder interface {
 	Get(ctx context.Context, userID, tenantID int64) (*domain.UserTenant, error)
 }
 
 type AuthzService struct {
-	roles roleGetter
+	ms membershipFinder
 }
 
-func NewAuthzService(roles roleGetter) *AuthzService {
-	return &AuthzService{roles: roles}
+func NewAuthzService(ms membershipFinder) *AuthzService {
+	return &AuthzService{
+		ms: ms,
+	}
 }
 
 func (s *AuthzService) CheckAccess(ctx context.Context, userID, tenantID int64, allowedRoles ...domain.UserRole) error {
-	role1, err := s.roles.Get(ctx, userID, tenantID)
+	m, err := s.ms.Get(ctx, userID, tenantID)
 	if err != nil {
 		return err
-	}
-	role := role1.Role
-	if role == "" {
-		return ErrUserNotInTenant
 	}
 
 	if len(allowedRoles) == 0 {
 		return ErrAccessDenied
 	}
+
 	for _, allowed := range allowedRoles {
-		if role == allowed {
+		if m.Role == allowed {
 			return nil
 		}
 	}
