@@ -44,12 +44,6 @@ const (
 		LIMIT $2 OFFSET $3
 	`
 
-	countUsersByTenantIDQuery = `
-		SELECT COUNT(*)
-		FROM user_tenants
-		WHERE tenant_id = $1
-	`
-
 	createUserQuery = `
 		INSERT INTO users (email, first_name, last_name, password_hash, created_at)
 		VALUES ($1, $2, $3, $4, NOW())
@@ -125,13 +119,13 @@ func (r *UserRepository) ListByTenant(ctx context.Context, tenantID int64, limit
 	executor := r.tr.Executor(ctx, r.db)
 
 	var total int64
-	err := executor.QueryRowContext(ctx, countUsersByTenantIDQuery, tenantID).Scan(&total)
+	err := executor.QueryRowContext(ctx, countByTenantIDQuery, tenantID).Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("ошибка при подсчете участников компании (tenantID=%d): %w", tenantID, err)
 	}
 
 	if total == 0 || int64(offset) >= total {
-		return []domain.User{}, 0, nil
+		return []domain.User{}, total, nil
 	}
 
 	rows, err := executor.QueryContext(ctx, listUsersByTenantIDQuery, tenantID, limit, offset)
@@ -142,6 +136,7 @@ func (r *UserRepository) ListByTenant(ctx context.Context, tenantID int64, limit
 	defer func() { _ = rows.Close() }()
 
 	users := make([]domain.User, 0, pagination.CalculateCapacity(total, limit, offset))
+
 	for rows.Next() {
 		user, err := r.scan(rows)
 		if err != nil {

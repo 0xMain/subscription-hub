@@ -20,8 +20,8 @@ type (
 		Delete(ctx context.Context, id int64) error
 	}
 	profileLinker interface {
-		IsOwnerAnywhere(ctx context.Context, userID int64) (bool, error)
-		ListUserMemberships(ctx context.Context, userID int64, limit, offset int) ([]domain.UserTenantDetail, int64, error)
+		IsOwner(ctx context.Context, userID int64) (bool, error)
+		ListDetailsByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.UserTenantDetail, int64, error)
 	}
 )
 
@@ -47,7 +47,7 @@ func (s *ProfileService) GetFullProfile(ctx context.Context, userID int64, limit
 		return nil, err
 	}
 
-	items, total, err := s.links.ListUserMemberships(ctx, userID, limit, offset)
+	items, total, err := s.links.ListDetailsByUser(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s *ProfileService) Update(ctx context.Context, userID int64, firstName, la
 }
 
 func (s *ProfileService) Delete(ctx context.Context, userID int64) error {
-	isOwner, err := s.links.IsOwnerAnywhere(ctx, userID)
+	isOwner, err := s.links.IsOwner(ctx, userID)
 	if err != nil {
 		return err
 	}
