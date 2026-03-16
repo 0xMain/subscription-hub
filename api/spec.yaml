@@ -183,7 +183,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Требуется авторизация"
-        '422':
+        '409':
           description: Невозможно удалить профиль владельца организации
           content:
             application/json:

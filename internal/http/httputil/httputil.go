@@ -1,4 +1,4 @@
-package handler
+package httputil
 
 import (
 	"errors"
@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/0xMain/subscription-hub/internal/http/gen/profileapi"
+	"github.com/0xMain/subscription-hub/internal/http/httperrs"
 	"github.com/0xMain/subscription-hub/internal/pkg/ctxutil"
 	"github.com/0xMain/subscription-hub/internal/pkg/pagination"
 
@@ -14,27 +15,27 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type baseHelper struct{}
+type BaseHelper struct{}
 
-func (h *baseHelper) requireUserID(c *gin.Context) (int64, bool) {
+func (h *BaseHelper) RequireUserID(c *gin.Context) (int64, bool) {
 	userID, ok := ctxutil.GetUserID(c.Request.Context())
 	if !ok {
-		h.sendError(c, http.StatusUnauthorized, msgUnauthorized, nil)
+		h.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
 		return 0, false
 	}
 	return userID, true
 }
 
-func (h *baseHelper) requireTenantID(c *gin.Context) (int64, bool) {
+func (h *BaseHelper) RequireTenantID(c *gin.Context) (int64, bool) {
 	tenantID, ok := ctxutil.GetTenantID(c.Request.Context())
 	if !ok {
-		h.sendError(c, http.StatusBadRequest, msgMissingTenantErr, nil)
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgMissingTenantErr, nil)
 		return 0, false
 	}
 	return tenantID, true
 }
 
-func (h *baseHelper) getPaginationParams(limitPtr, offsetPtr *int) (int, int) {
+func (h *BaseHelper) GetPaginationParams(limitPtr, offsetPtr *int) (int, int) {
 	var l, o int
 	if limitPtr != nil {
 		l = *limitPtr
@@ -46,7 +47,7 @@ func (h *baseHelper) getPaginationParams(limitPtr, offsetPtr *int) (int, int) {
 	return pagination.Normalize(l, o)
 }
 
-func (h *baseHelper) sendError(c *gin.Context, status int, msg string, details map[string]string) {
+func (h *BaseHelper) SendError(c *gin.Context, status int, msg string, details map[string]string) {
 	resp := profileapi.ErrorResponse{
 		Error: msg,
 	}
@@ -56,7 +57,7 @@ func (h *baseHelper) sendError(c *gin.Context, status int, msg string, details m
 	c.AbortWithStatusJSON(status, resp)
 }
 
-func (h *baseHelper) formatValidationErrors(err error) map[string]string {
+func (h *BaseHelper) FormatValidationErrors(err error) map[string]string {
 	var ve validator.ValidationErrors
 	details := make(map[string]string)
 	if errors.As(err, &ve) {
@@ -67,7 +68,7 @@ func (h *baseHelper) formatValidationErrors(err error) map[string]string {
 	return details
 }
 
-func (h *baseHelper) getQueryInt(c *gin.Context, key string) (int, bool) {
+func (h *BaseHelper) GetQueryInt(c *gin.Context, key string) (int, bool) {
 	val := c.Query(key)
 	if val == "" {
 		return 0, false

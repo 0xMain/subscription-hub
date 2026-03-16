@@ -8,6 +8,8 @@ import (
 
 	"github.com/0xMain/subscription-hub/internal/domain"
 	"github.com/0xMain/subscription-hub/internal/http/gen/profileapi"
+	"github.com/0xMain/subscription-hub/internal/http/httperrs"
+	"github.com/0xMain/subscription-hub/internal/http/httputil"
 	"github.com/0xMain/subscription-hub/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +26,7 @@ type profileService interface {
 }
 
 type ProfileHandler struct {
-	baseHelper
+	httputil.BaseHelper
 	svc      profileService
 	validate *validator.Validate
 }
@@ -34,7 +36,7 @@ func NewProfileHandler(svc profileService, validate *validator.Validate) *Profil
 }
 
 func (h *ProfileHandler) GetCurrentProfile(c *gin.Context) {
-	userID, ok := h.requireUserID(c)
+	userID, ok := h.RequireUserID(c)
 	if !ok {
 		return
 	}
@@ -42,11 +44,11 @@ func (h *ProfileHandler) GetCurrentProfile(c *gin.Context) {
 	user, err := h.svc.GetByID(c.Request.Context(), userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			h.sendError(c, http.StatusUnauthorized, msgUnauthorized, nil)
+			h.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
 			return
 		}
 		log.Printf("внутренняя ошибка (метод=GetCurrentProfile, ID=%d): %v", userID, err)
-		h.sendError(c, http.StatusInternalServerError, msgInternalError, nil)
+		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 		return
 	}
 
@@ -54,21 +56,21 @@ func (h *ProfileHandler) GetCurrentProfile(c *gin.Context) {
 }
 
 func (h *ProfileHandler) GetFullCurrentProfile(c *gin.Context, params profileapi.GetFullCurrentProfileParams) {
-	userID, ok := h.requireUserID(c)
+	userID, ok := h.RequireUserID(c)
 	if !ok {
 		return
 	}
 
-	limit, offset := h.getPaginationParams(params.TenantsLimit, params.TenantsOffset)
+	limit, offset := h.GetPaginationParams(params.TenantsLimit, params.TenantsOffset)
 
 	full, err := h.svc.GetFullProfile(c.Request.Context(), userID, limit, offset)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			h.sendError(c, http.StatusUnauthorized, msgUnauthorized, nil)
+			h.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
 			return
 		}
 		log.Printf("внутренняя ошибка (метод=GetFullCurrentProfile, ID=%d): %v", userID, err)
-		h.sendError(c, http.StatusInternalServerError, msgInternalError, nil)
+		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 		return
 	}
 
@@ -76,7 +78,7 @@ func (h *ProfileHandler) GetFullCurrentProfile(c *gin.Context, params profileapi
 }
 
 func (h *ProfileHandler) UpdateCurrentProfile(c *gin.Context) {
-	userID, ok := h.requireUserID(c)
+	userID, ok := h.RequireUserID(c)
 	if !ok {
 		return
 	}
@@ -84,19 +86,19 @@ func (h *ProfileHandler) UpdateCurrentProfile(c *gin.Context) {
 	var req profileapi.UpdateProfileRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.sendError(c, http.StatusBadRequest, msgInvalidFormat, nil)
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgInvalidFormatErr, nil)
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		h.sendError(c, http.StatusBadRequest, msgValidationErr, h.formatValidationErrors(err))
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgValidationErr, h.FormatValidationErrors(err))
 		return
 	}
 
 	user, err := h.svc.Update(c.Request.Context(), userID, req.FirstName, req.LastName)
 	if err != nil {
 		log.Printf("внутренняя ошибка (метод=UpdateCurrentProfile, ID=%d): %v", userID, err)
-		h.sendError(c, http.StatusInternalServerError, msgInternalError, nil)
+		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 		return
 	}
 
@@ -104,23 +106,26 @@ func (h *ProfileHandler) UpdateCurrentProfile(c *gin.Context) {
 }
 
 func (h *ProfileHandler) DeleteCurrentProfile(c *gin.Context) {
-	userID, ok := h.requireUserID(c)
+	userID, ok := h.RequireUserID(c)
 	if !ok {
 		return
 	}
 
 	err := h.svc.Delete(c.Request.Context(), userID)
 	if err != nil {
-		if errors.Is(err, domain.ErrCannotDeleteOwner) {
-			h.sendError(c,
-				http.StatusUnprocessableEntity,
-				msgDeleteErr,
-				map[string]string{"base": msgCannotDeleteOwner},
+		switch {
+		case errors.Is(err, domain.ErrCannotDeleteOwner):
+			h.SendError(c,
+				http.StatusConflict,
+				httperrs.MsgDeleteErr,
+				map[string]string{"base": httperrs.MsgCannotDeleteOwnerErr},
 			)
-			return
+		case errors.Is(err, domain.ErrUserNotFound):
+			h.SendError(c, http.StatusNotFound, httperrs.MsgUserNotFoundErr, nil)
+		default:
+			log.Printf("внутренняя ошибка (метод=DeleteCurrentProfile, ID=%d): %v", userID, err)
+			h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 		}
-		log.Printf("внутренняя ошибка (метод=DeleteCurrentProfile, ID=%d): %v", userID, err)
-		h.sendError(c, http.StatusInternalServerError, msgInternalError, nil)
 		return
 	}
 

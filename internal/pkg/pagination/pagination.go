@@ -27,10 +27,5 @@ func CalculateCapacity(total int64, limit, offset int) int {
 	}
 
 	remaining := int(total - int64(offset))
-
-	if remaining < limit {
-		return remaining
-	}
-
-	return limit
+	return min(remaining, limit)
 }

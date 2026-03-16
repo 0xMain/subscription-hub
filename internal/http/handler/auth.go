@@ -8,6 +8,8 @@ import (
 
 	"github.com/0xMain/subscription-hub/internal/domain"
 	"github.com/0xMain/subscription-hub/internal/http/gen/authapi"
+	"github.com/0xMain/subscription-hub/internal/http/httperrs"
+	"github.com/0xMain/subscription-hub/internal/http/httputil"
 	"github.com/0xMain/subscription-hub/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +23,7 @@ type authService interface {
 }
 
 type AuthHandler struct {
-	baseHelper
+	httputil.BaseHelper
 	svc      authService
 	validate *validator.Validate
 }
@@ -34,12 +36,12 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	var req authapi.SignUpRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.sendError(c, http.StatusBadRequest, msgInvalidFormat, nil)
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgInvalidFormatErr, nil)
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		h.sendError(c, http.StatusBadRequest, msgValidationErr, h.formatValidationErrors(err))
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgValidationErr, h.FormatValidationErrors(err))
 		return
 	}
 
@@ -51,12 +53,12 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	})
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyRegistered) {
-			h.sendError(c, http.StatusConflict, msgUserExists, nil)
+			h.SendError(c, http.StatusConflict, httperrs.MsgUserExistsErr, nil)
 			return
 		}
 
 		log.Printf("внутренняя ошибка (метод=SignUp): %v", err)
-		h.sendError(c, http.StatusInternalServerError, msgInternalError, nil)
+		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 		return
 	}
 
@@ -67,24 +69,24 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 	var req authapi.SignInRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.sendError(c, http.StatusBadRequest, msgInvalidFormat, nil)
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgInvalidFormatErr, nil)
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		h.sendError(c, http.StatusBadRequest, msgValidationErr, h.formatValidationErrors(err))
+		h.SendError(c, http.StatusBadRequest, httperrs.MsgValidationErr, h.FormatValidationErrors(err))
 		return
 	}
 
 	res, err := h.svc.SignIn(c.Request.Context(), string(req.Email), req.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidCredentials) {
-			h.sendError(c, http.StatusUnauthorized, msgInvalidCredentials, nil)
+			h.SendError(c, http.StatusUnauthorized, httperrs.MsgInvalidCredentialsErr, nil)
 			return
 		}
 
 		log.Printf("внутренняя ошибка (метод=SignIn): %v", err)
-		h.sendError(c, http.StatusInternalServerError, msgInternalError, nil)
+		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 		return
 	}
 

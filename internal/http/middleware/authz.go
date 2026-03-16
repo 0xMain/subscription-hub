@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/0xMain/subscription-hub/internal/domain"
+	"github.com/0xMain/subscription-hub/internal/http/httperrs"
+	"github.com/0xMain/subscription-hub/internal/http/httputil"
 	"github.com/0xMain/subscription-hub/internal/pkg/ctxutil"
 	"github.com/0xMain/subscription-hub/internal/service"
 
@@ -17,7 +19,8 @@ type accessChecker interface {
 }
 
 type AuthzMiddleware struct {
-	svc accessChecker
+	httputil.BaseHelper // Встраиваем для m.SendError
+	svc                 accessChecker
 }
 
 func NewAuthzMiddleware(svc accessChecker) *AuthzMiddleware {
@@ -26,17 +29,15 @@ func NewAuthzMiddleware(svc accessChecker) *AuthzMiddleware {
 
 func (m *AuthzMiddleware) RequireRoles(allowedRoles ...domain.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userIDVal, exists := c.Get(string(ctxutil.ContextUserID))
-		userID, ok := userIDVal.(int64)
-		if !exists || !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "необходима повторная авторизация"})
+		userID, okUser := ctxutil.GetUserID(c.Request.Context())
+		if !okUser {
+			m.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
 			return
 		}
 
-		tenantIDVal, exists := c.Get(string(ctxutil.ContextTenantID))
-		tenantID, ok := tenantIDVal.(int64)
-		if !exists || !ok {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "идентификатор компании (X-Tenant-ID) отсутствует или некорректен"})
+		tenantID, okTenant := ctxutil.GetTenantID(c.Request.Context())
+		if !okTenant {
+			m.SendError(c, http.StatusBadRequest, httperrs.MsgMissingTenantErr, nil)
 			return
 		}
 
@@ -52,10 +53,12 @@ func (m *AuthzMiddleware) RequireRoles(allowedRoles ...domain.UserRole) gin.Hand
 
 func (m *AuthzMiddleware) handleAccessError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, service.ErrUserNotInTenant), errors.Is(err, service.ErrAccessDenied):
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+	case errors.Is(err, service.ErrUserNotInTenant):
+		m.SendError(c, http.StatusForbidden, httperrs.MsgUserNotInTenantErr, nil)
+	case errors.Is(err, service.ErrAccessDenied):
+		m.SendError(c, http.StatusForbidden, httperrs.MsgForbiddenErr, nil)
 	default:
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "ошибка проверки прав доступа"})
+		m.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
 	}
 }
 
