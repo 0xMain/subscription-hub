@@ -7,9 +7,11 @@ import (
 	"net/http"
 
 	"github.com/0xMain/subscription-hub/internal/domain"
+	"github.com/0xMain/subscription-hub/internal/http/errs"
 	"github.com/0xMain/subscription-hub/internal/http/gen/authapi"
-	"github.com/0xMain/subscription-hub/internal/http/httperrs"
-	"github.com/0xMain/subscription-hub/internal/http/httputil"
+	usergen "github.com/0xMain/subscription-hub/internal/http/gen/user"
+	"github.com/0xMain/subscription-hub/internal/http/req"
+	"github.com/0xMain/subscription-hub/internal/http/res"
 	"github.com/0xMain/subscription-hub/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +25,6 @@ type authService interface {
 }
 
 type AuthHandler struct {
-	httputil.BaseHelper
 	svc      authService
 	validate *validator.Validate
 }
@@ -33,71 +34,57 @@ func NewAuthHandler(svc authService, validate *validator.Validate) *AuthHandler 
 }
 
 func (h *AuthHandler) SignUp(c *gin.Context) {
-	var req authapi.SignUpRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, http.StatusBadRequest, httperrs.MsgInvalidFormatErr, nil)
-		return
-	}
-
-	if err := h.validate.Struct(req); err != nil {
-		h.SendError(c, http.StatusBadRequest, httperrs.MsgValidationErr, h.FormatValidationErrors(err))
+	var r authapi.SignUpRequest
+	if !req.Body(c, &r) {
 		return
 	}
 
 	user, err := h.svc.SignUp(c.Request.Context(), service.SignUpParams{
-		Email:     string(req.Email),
-		Password:  req.Password,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
+		Email:     string(r.Email),
+		Password:  r.Password,
+		FirstName: r.FirstName,
+		LastName:  r.LastName,
 	})
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyRegistered) {
-			h.SendError(c, http.StatusConflict, httperrs.MsgUserExistsErr, nil)
+			res.Error(c, http.StatusConflict, errs.MsgUserExistsErr, nil)
 			return
 		}
 
 		log.Printf("внутренняя ошибка (метод=SignUp): %v", err)
-		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
+		res.Error(c, http.StatusInternalServerError, errs.MsgInternalErr, nil)
 		return
 	}
 
-	c.JSON(http.StatusCreated, h.mapUserToResponse(user))
+	res.Created(c, h.toUserResponse(user))
 }
 
 func (h *AuthHandler) SignIn(c *gin.Context) {
-	var req authapi.SignInRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, http.StatusBadRequest, httperrs.MsgInvalidFormatErr, nil)
+	var r authapi.SignInRequest
+	if !req.Body(c, &r) {
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil {
-		h.SendError(c, http.StatusBadRequest, httperrs.MsgValidationErr, h.FormatValidationErrors(err))
-		return
-	}
-
-	res, err := h.svc.SignIn(c.Request.Context(), string(req.Email), req.Password)
+	result, err := h.svc.SignIn(c.Request.Context(), string(r.Email), r.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidCredentials) {
-			h.SendError(c, http.StatusUnauthorized, httperrs.MsgInvalidCredentialsErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidCredentialsErr, nil)
 			return
 		}
 
 		log.Printf("внутренняя ошибка (метод=SignIn): %v", err)
-		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
+		res.Error(c, http.StatusInternalServerError, errs.MsgInternalErr, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, authapi.SignInResponse{
-		AccessToken: res.AccessToken,
-		User:        h.mapUserToResponse(res.User),
+	res.OK(c, authapi.SignInResponse{
+		AccessToken: result.AccessToken,
+		User:        h.toUserResponse(result.User),
 	})
 }
 
-func (h *AuthHandler) mapUserToResponse(user *domain.User) authapi.UserResponse {
-	return authapi.UserResponse{
+func (h *AuthHandler) toUserResponse(user *domain.User) usergen.UserResponse {
+	return usergen.UserResponse{
 		ID:        user.ID,
 		Email:     types.Email(user.Email),
 		FirstName: user.FirstName,

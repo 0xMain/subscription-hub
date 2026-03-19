@@ -7,9 +7,12 @@ import (
 	"net/http"
 
 	"github.com/0xMain/subscription-hub/internal/domain"
+	"github.com/0xMain/subscription-hub/internal/http/errs"
+	commongen "github.com/0xMain/subscription-hub/internal/http/gen/common"
 	"github.com/0xMain/subscription-hub/internal/http/gen/profileapi"
-	"github.com/0xMain/subscription-hub/internal/http/httperrs"
-	"github.com/0xMain/subscription-hub/internal/http/httputil"
+	usergen "github.com/0xMain/subscription-hub/internal/http/gen/user"
+	"github.com/0xMain/subscription-hub/internal/http/req"
+	"github.com/0xMain/subscription-hub/internal/http/res"
 	"github.com/0xMain/subscription-hub/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +29,6 @@ type profileService interface {
 }
 
 type ProfileHandler struct {
-	httputil.BaseHelper
 	svc      profileService
 	validate *validator.Validate
 }
@@ -36,104 +38,97 @@ func NewProfileHandler(svc profileService, validate *validator.Validate) *Profil
 }
 
 func (h *ProfileHandler) GetCurrentProfile(c *gin.Context) {
-	userID, ok := h.RequireUserID(c)
+	uid, ok := req.UserID(c)
 	if !ok {
 		return
 	}
 
-	user, err := h.svc.GetByID(c.Request.Context(), userID)
+	user, err := h.svc.GetByID(c.Request.Context(), uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			h.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgUnauthorizedErr, nil)
 			return
 		}
-		log.Printf("внутренняя ошибка (метод=GetCurrentProfile, ID=%d): %v", userID, err)
-		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
+		log.Printf("внутренняя ошибка (метод=GetCurrentProfile, ID=%d): %v", uid, err)
+		res.Error(c, http.StatusInternalServerError, errs.MsgInternalErr, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, h.mapUserToResponse(user))
+	res.OK(c, h.toUserResponse(user))
 }
 
 func (h *ProfileHandler) GetFullCurrentProfile(c *gin.Context, params profileapi.GetFullCurrentProfileParams) {
-	userID, ok := h.RequireUserID(c)
+	uid, ok := req.UserID(c)
 	if !ok {
 		return
 	}
 
-	limit, offset := h.GetPaginationParams(params.TenantsLimit, params.TenantsOffset)
+	limit, offset := req.Pagination(params.TenantsLimit, params.TenantsOffset)
 
-	full, err := h.svc.GetFullProfile(c.Request.Context(), userID, limit, offset)
+	full, err := h.svc.GetFullProfile(c.Request.Context(), uid, limit, offset)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			h.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgUnauthorizedErr, nil)
 			return
 		}
-		log.Printf("внутренняя ошибка (метод=GetFullCurrentProfile, ID=%d): %v", userID, err)
-		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
+		log.Printf("внутренняя ошибка (метод=GetFullCurrentProfile, ID=%d): %v", uid, err)
+		res.Error(c, http.StatusInternalServerError, errs.MsgInternalErr, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, h.mapFullProfileToResponse(full, limit, offset))
+	res.OK(c, h.toFullProfileResponse(full, limit, offset))
 }
 
 func (h *ProfileHandler) UpdateCurrentProfile(c *gin.Context) {
-	userID, ok := h.RequireUserID(c)
+	uid, ok := req.UserID(c)
 	if !ok {
 		return
 	}
 
-	var req profileapi.UpdateProfileRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, http.StatusBadRequest, httperrs.MsgInvalidFormatErr, nil)
+	var r profileapi.UpdateProfileRequest
+	if !req.Body(c, &r) {
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil {
-		h.SendError(c, http.StatusBadRequest, httperrs.MsgValidationErr, h.FormatValidationErrors(err))
-		return
-	}
-
-	user, err := h.svc.Update(c.Request.Context(), userID, req.FirstName, req.LastName)
+	user, err := h.svc.Update(c.Request.Context(), uid, r.FirstName, r.LastName)
 	if err != nil {
-		log.Printf("внутренняя ошибка (метод=UpdateCurrentProfile, ID=%d): %v", userID, err)
-		h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
+		log.Printf("внутренняя ошибка (метод=UpdateCurrentProfile, ID=%d): %v", uid, err)
+		res.Error(c, http.StatusInternalServerError, errs.MsgInternalErr, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, h.mapUserToResponse(user))
+	res.OK(c, h.toUserResponse(user))
 }
 
 func (h *ProfileHandler) DeleteCurrentProfile(c *gin.Context) {
-	userID, ok := h.RequireUserID(c)
+	uid, ok := req.UserID(c)
 	if !ok {
 		return
 	}
 
-	err := h.svc.Delete(c.Request.Context(), userID)
+	err := h.svc.Delete(c.Request.Context(), uid)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrCannotDeleteOwner):
-			h.SendError(c,
+			res.Error(c,
 				http.StatusConflict,
-				httperrs.MsgDeleteErr,
-				map[string]string{"base": httperrs.MsgCannotDeleteOwnerErr},
+				errs.MsgDeleteErr,
+				map[string]string{"base": errs.MsgCannotDeleteOwnerErr},
 			)
 		case errors.Is(err, domain.ErrUserNotFound):
-			h.SendError(c, http.StatusNotFound, httperrs.MsgUserNotFoundErr, nil)
+			res.Error(c, http.StatusNotFound, errs.MsgUserNotFoundErr, nil)
 		default:
-			log.Printf("внутренняя ошибка (метод=DeleteCurrentProfile, ID=%d): %v", userID, err)
-			h.SendError(c, http.StatusInternalServerError, httperrs.MsgInternalErr, nil)
+			log.Printf("внутренняя ошибка (метод=DeleteCurrentProfile, ID=%d): %v", uid, err)
+			res.Error(c, http.StatusInternalServerError, errs.MsgInternalErr, nil)
 		}
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	res.NoContent(c)
 }
 
-func (h *ProfileHandler) mapUserToResponse(user *domain.User) profileapi.UserResponse {
-	return profileapi.UserResponse{
+func (h *ProfileHandler) toUserResponse(user *domain.User) usergen.UserResponse {
+	return usergen.UserResponse{
 		ID:        user.ID,
 		Email:     types.Email(user.Email),
 		FirstName: user.FirstName,
@@ -142,7 +137,7 @@ func (h *ProfileHandler) mapUserToResponse(user *domain.User) profileapi.UserRes
 	}
 }
 
-func (h *ProfileHandler) mapFullProfileToResponse(p *service.FullProfileResult, limit, offset int) profileapi.FullProfileResponse {
+func (h *ProfileHandler) toFullProfileResponse(p *service.FullProfileResult, limit, offset int) profileapi.FullProfileResponse {
 	tenantItems := make([]profileapi.MemberTenantResponse, len(p.Memberships))
 	for i, m := range p.Memberships {
 		tenantItems[i] = profileapi.MemberTenantResponse{
@@ -161,10 +156,10 @@ func (h *ProfileHandler) mapFullProfileToResponse(p *service.FullProfileResult, 
 
 		Tenants: struct {
 			Items      []profileapi.MemberTenantResponse `json:"items"`
-			Pagination profileapi.PaginationMeta         `json:"pagination"`
+			Pagination commongen.PaginationMeta          `json:"pagination"`
 		}{
 			Items: tenantItems,
-			Pagination: profileapi.PaginationMeta{
+			Pagination: commongen.PaginationMeta{
 				Limit:  limit,
 				Offset: offset,
 				Total:  p.MembershipsTotal,

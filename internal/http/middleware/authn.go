@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/0xMain/subscription-hub/internal/http/httperrs"
-	"github.com/0xMain/subscription-hub/internal/http/httputil"
+	"github.com/0xMain/subscription-hub/internal/http/errs"
+	"github.com/0xMain/subscription-hub/internal/http/res"
 	"github.com/0xMain/subscription-hub/internal/pkg/ctxutil"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +18,6 @@ type tokenValidator interface {
 }
 
 type AuthnMiddleware struct {
-	httputil.BaseHelper
 	svc tokenValidator
 }
 
@@ -30,25 +29,25 @@ func (m *AuthnMiddleware) Verify() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := extractToken(c)
 		if tokenString == "" {
-			m.SendError(c, http.StatusUnauthorized, httperrs.MsgUnauthorizedErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgUnauthorizedErr, nil)
 			return
 		}
 
 		claims, err := m.svc.ValidateToken(tokenString)
 		if err != nil {
-			m.SendError(c, http.StatusUnauthorized, httperrs.MsgInvalidTokenErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidTokenErr, nil)
 			return
 		}
 
 		sub, err := claims.GetSubject()
 		if err != nil || sub == "" {
-			m.SendError(c, http.StatusUnauthorized, httperrs.MsgInvalidUserIDErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidUserIDErr, nil)
 			return
 		}
 
 		userID, err := strconv.ParseInt(sub, 10, 64)
 		if err != nil {
-			m.SendError(c, http.StatusUnauthorized, httperrs.MsgInvalidUserIDErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidUserIDErr, nil)
 			return
 		}
 

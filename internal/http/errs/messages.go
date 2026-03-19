@@ -1,4 +1,4 @@
-package httperrs
+package errs
 
 const (
 	MsgInternalErr      = "Внутренняя ошибка сервера"
