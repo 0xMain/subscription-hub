@@ -1,0 +1,44 @@
+components:
+  schemas:
+
+    ErrorResponse:
+      type: object
+      description: "Универсальный формат ответа при возникновении ошибок (4xx, 5xx)"
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          x-order: 1
+          description: "Описание ошибки"
+        details:
+          type: object
+          x-order: 2
+          description: "Дополнительные детали (если присутствуют)"
+          additionalProperties:
+            type: string
+
+    PaginationMeta:
+      type: object
+      description: "Метаданные пагинации для списков (коллекций)"
+      required:
+        - limit
+        - offset
+        - total
+      properties:
+        limit:
+          type: integer
+          x-order: 1
+          description: "Сколько записей запрошено"
+          example: 10
+        offset:
+          type: integer
+          x-order: 2
+          description: "С какой позиции начат отсчет"
+          example: 0
+        total:
+          type: integer
+          format: int64
+          x-order: 3
+          description: "Общее количество записей в базе"
+          example: 100

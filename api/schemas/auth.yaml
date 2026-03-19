@@ -1,0 +1,78 @@
+components:
+  schemas:
+
+    SignUpRequest:
+      x-oapi-codegen-extra-tags: ["Аутентификация"]
+      type: object
+      description: "Данные для регистрации нового пользователя"
+      required:
+        - email
+        - first_name
+        - last_name
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          x-order: 1
+          description: "Адрес электронной почты (логин)"
+          example: "name@mail.ru"
+        first_name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          x-order: 2
+          description: "Имя пользователя"
+          example: "firstname"
+        last_name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          x-order: 3
+          description: "Фамилия пользователя"
+          example: "lastname"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          x-order: 4
+          example: "12345678"
+
+    SignInRequest:
+      x-oapi-codegen-extra-tags: ["Аутентификация"]
+      type: object
+      description: "Учетные данные для входа в систему"
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          x-order: 1
+          description: "Адрес электронной почты (логин), указанный при регистрации"
+          example: "name@mail.ru"
+        password:
+          type: string
+          format: password
+          x-order: 2
+          description: "Текущий пароль пользователя"
+          example: "12345678"
+
+    SignInResponse:
+      x-oapi-codegen-extra-tags: ["Аутентификация"]
+      type: object
+      description: "Результат успешной аутентификации"
+      required:
+        - access_token
+        - user
+      properties:
+        access_token:
+          type: string
+          x-order: 1
+          description: "JWT-токен для доступа к защищенным ресурсам"
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          x-order: 2
+          allOf:
+            - $ref: './user.yaml#/components/schemas/UserResponse'

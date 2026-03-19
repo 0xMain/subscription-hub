@@ -1,0 +1,80 @@
+components:
+  schemas:
+
+    FullProfileResponse:
+      allOf:
+        - $ref: './user.yaml#/components/schemas/UserResponse'
+        - type: object
+          description: "Расширенный профиль пользователя"
+          required:
+            - tenants
+          properties:
+            tenants:
+              type: object
+              x-order: 6
+              description: "Список компаний пользователя с метаданными пагинации"
+              required:
+                - items
+                - pagination
+              properties:
+                items:
+                  type: array
+                  x-order: 1
+                  items:
+                    $ref: '#/components/schemas/MemberTenantResponse'
+                pagination:
+                  x-order: 2
+                  allOf:
+                    - $ref: './common.yaml#/components/schemas/PaginationMeta'
+
+    UpdateProfileRequest:
+      type: object
+      description: "Данные для частичного обновления профиля текущего пользователя"
+      properties:
+        first_name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          x-order: 1
+          description: "Новое имя пользователя"
+          example: "firstname"
+        last_name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          x-order: 2
+          description: "Новая фамилия пользователя"
+          example: "lastname"
+
+    # Связи пользователей с компаниями
+
+    MemberTenantResponse:
+      type: object
+      description: "Данные о членстве пользователя в компании"
+      required:
+        - tenant_id
+        - tenant_name
+        - role
+      properties:
+        tenant_id:
+          type: integer
+          format: int64
+          x-go-name: TenantID
+          x-order: 1
+          description: "Уникальный идентификатор компании"
+          example: 1
+        tenant_name:
+          type: string
+          x-order: 2
+          description: "Название компании"
+          example: "tenantname"
+        role:
+          type: string
+          enum:
+            - owner
+            - admin
+            - manager
+            - viewer
+          x-order: 3
+          description: "Роль текущего пользователя в этой компании"
+          example: "admin"

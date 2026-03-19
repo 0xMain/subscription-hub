@@ -1,9 +1,0 @@
-package: tenantapi
-generate:
-  gin-server: true
-  models: true
-  embedded-spec: true
-output-options:
-  include-tags:
-    - Компании
-output: internal/http/gen/tenantapi/tenant.go

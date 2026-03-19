@@ -1,9 +1,0 @@
-package: invoiceitemapi
-generate:
-  gin-server: true
-  models: true
-  embedded-spec: true
-output-options:
-  include-tags:
-    - Позиции счета
-output: internal/http/gen/invoiceitemapi/invoice_item.go

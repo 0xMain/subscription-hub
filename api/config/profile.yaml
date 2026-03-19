@@ -1,9 +1,0 @@
-package: profileapi
-generate:
-  gin-server: true
-  models: true
-  embedded-spec: true
-output-options:
-  include-tags:
-    - Профиль
-output: internal/http/gen/profileapi/profile.go

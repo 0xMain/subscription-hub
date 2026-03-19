@@ -1,0 +1,8 @@
+package: authapi
+generate:
+  models: true
+output-options:
+  skip-prune: true
+output: internal/http/gen/authapi/models.gen.go
+import-mapping:
+  "./user.yaml": github.com/0xMain/subscription-hub/internal/http/gen/user

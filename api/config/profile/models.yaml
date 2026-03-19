@@ -1,0 +1,8 @@
+package: profileapi
+generate:
+  models: true
+output-options:
+  skip-prune: true
+output: internal/http/gen/profileapi/models.gen.go
+import-mapping:
+  "./common.yaml": github.com/0xMain/subscription-hub/internal/http/gen/common

@@ -1,9 +1,0 @@
-package: customerapi
-generate:
-  gin-server: true
-  models: true
-  embedded-spec: true
-output-options:
-  include-tags:
-    - Клиенты
-output: internal/http/gen/customerapi/customer.go

@@ -1,0 +1,42 @@
+components:
+  schemas:
+
+    UserResponse:
+      type: object
+      description: "Базовая информация о пользователе системы"
+      required:
+        - id
+        - email
+        - first_name
+        - last_name
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-order: 1
+          description: "Уникальный идентификатор пользователя"
+          example: 1
+        email:
+          type: string
+          format: email
+          x-order: 2
+          description: "Адрес электронной почты (логин)"
+          example: "name@mail.ru"
+        first_name:
+          type: string
+          x-order: 3
+          description: "Имя пользователя"
+          example: "firstname"
+        last_name:
+          type: string
+          description: "Фамилия пользователя"
+          x-order: 4
+          example: "lastname"
+        created_at:
+          type: string
+          format: date-time
+          x-order: 5
+          description: "Дата и время регистрации пользователя в системе"
+          example: "2024-01-01T12:00:00Z"

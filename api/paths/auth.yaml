@@ -1,0 +1,77 @@
+signup:
+  post:
+    tags:
+      - Аутентификация
+    summary: Регистрация нового пользователя
+    operationId: SignUp
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/SignUpRequest'
+    responses:
+      '201':
+        description: Пользователь успешно зарегистрирован
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/user.yaml#/components/schemas/UserResponse'
+      '400':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Ошибка валидации"
+              details:
+                field_name: "Некорректное значение"
+      '409':
+        description: Пользователь с таким email уже зарегистрирован
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Пользователь с таким email уже зарегистрирован"
+
+signin:
+  post:
+    tags:
+      - Аутентификация
+    summary: Вход в систему
+    operationId: SignIn
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/SignInRequest'
+    responses:
+      '200':
+        description: Успешный вход
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/SignInResponse'
+      '400':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Ошибка валидации"
+              details:
+                field_name: "Некорректное значение"
+      '401':
+        description: Неверный email или пароль
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Неверный email или пароль"

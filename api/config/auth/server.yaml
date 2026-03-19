@@ -1,0 +1,11 @@
+package: authapi
+generate:
+  gin-server: true
+output-options:
+  include-tags:
+    - Аутентификация
+output: internal/http/gen/authapi/server.gen.go
+import-mapping:
+  "../schemas/auth.yaml": "-"
+  "../schemas/user.yaml": github.com/0xMain/subscription-hub/internal/http/gen/user
+  "../schemas/common.yaml": github.com/0xMain/subscription-hub/internal/http/gen/common

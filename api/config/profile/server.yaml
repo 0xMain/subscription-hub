@@ -1,0 +1,12 @@
+package: profileapi
+generate:
+  gin-server: true
+  models: true
+output-options:
+  include-tags:
+    - Профиль
+output: internal/http/gen/profileapi/server.gen.go
+import-mapping:
+  "../schemas/profile.yaml": "-"
+  "../schemas/common.yaml": github.com/0xMain/subscription-hub/internal/http/gen/common
+  "../schemas/user.yaml": github.com/0xMain/subscription-hub/internal/http/gen/user

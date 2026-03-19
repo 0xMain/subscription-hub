@@ -1,0 +1,131 @@
+profile:
+  get:
+    tags:
+      - Профиль
+    summary: Получить профиль текущего пользователя
+    operationId: GetCurrentProfile
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Успешное получение профиля
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/user.yaml#/components/schemas/UserResponse'
+      '401':
+        description: Пользователь не авторизован или токен недействителен
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Требуется авторизация"
+
+  patch:
+    tags:
+      - Профиль
+    summary: Обновить свой профиль
+    operationId: UpdateCurrentProfile
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/profile.yaml#/components/schemas/UpdateProfileRequest'
+    responses:
+      '200':
+        description: Профиль успешно обновлён
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/user.yaml#/components/schemas/UserResponse'
+      '400':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Ошибка валидации"
+              details:
+                field_name: "Некорректное значение"
+      '401':
+        description: Пользователь не авторизован или токен недействителен
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Требуется авторизация"
+
+  delete:
+    tags:
+      - Профиль
+    summary: Удалить свой профиль
+    operationId: DeleteCurrentProfile
+    security:
+      - BearerAuth: []
+    responses:
+      '204':
+        description: Профиль успешно удалён
+      '401':
+        description: Пользователь не авторизован или токен недействителен
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Требуется авторизация"
+      '409':
+        description: Невозможно удалить профиль владельца организации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Ошибка удаления"
+              details:
+                base: "Невозможно удалить профиль владельца организации"
+
+full:
+  get:
+    tags:
+      - Профиль
+    summary: Получить полный профиль с компаниями и ролями
+    operationId: GetFullCurrentProfile
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: tenants_limit
+        in: query
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+        description: Количество компаний в списке
+      - name: tenants_offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+        description: Смещение для пагинации компаний
+    responses:
+      '200':
+        description: Успешное получение профиля с компаниями
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/profile.yaml#/components/schemas/FullProfileResponse'
+      '401':
+        description: Пользователь не авторизован или токен недействителен
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: "Требуется авторизация"
