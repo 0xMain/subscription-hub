@@ -14,6 +14,7 @@ components:
         email:
           type: string
           format: email
+          pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 1
           description: "Адрес электронной почты (логин)"
           example: "name@mail.ru"
@@ -49,6 +50,7 @@ components:
         email:
           type: string
           format: email
+          pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 1
           description: "Адрес электронной почты (логин), указанный при регистрации"
           example: "name@mail.ru"

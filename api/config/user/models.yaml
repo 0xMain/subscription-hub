@@ -1,6 +1,7 @@
 package: user
 generate:
   models: true
+  embedded-spec: true
 output: internal/http/gen/user/models.gen.go
 output-options:
   skip-prune: true

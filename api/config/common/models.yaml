@@ -1,6 +1,7 @@
 package: common
 generate:
   models: true
+  embedded-spec: true
 output: internal/http/gen/common/models.gen.go
 output-options:
   skip-prune: true

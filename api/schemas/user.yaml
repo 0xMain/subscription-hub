@@ -21,6 +21,7 @@ components:
         email:
           type: string
           format: email
+          pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 2
           description: "Адрес электронной почты (логин)"
           example: "name@mail.ru"

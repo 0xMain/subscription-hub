@@ -67,12 +67,20 @@ func Start(ctx context.Context) error {
 		AllowCredentials: true,
 	}))
 
-	authapi.RegisterHandlers(router, authHandler)
+	authSwag, _ := authapi.GetSwagger()
+	profileSwag, _ := profileapi.GetSwagger()
 
-	// Защищенные эндпоинты (Profile)
-	profileapi.RegisterHandlersWithOptions(router, profileHandler, profileapi.GinServerOptions{
+	// 2. Группа AUTH (публичная, но с валидацией контракта)
+	authGroup := router.Group("/")
+	authGroup.Use(middleware.OAPIValidator(authSwag))
+	authapi.RegisterHandlers(authGroup, authHandler)
+
+	// 3. Группа PROFILE (защищенная + валидация контракта)
+	profileGroup := router.Group("/")
+	profileGroup.Use(middleware.OAPIValidator(profileSwag))
+	profileapi.RegisterHandlersWithOptions(profileGroup, profileHandler, profileapi.GinServerOptions{
 		Middlewares: []profileapi.MiddlewareFunc{
-			profileapi.MiddlewareFunc(authnMiddleware.Verify()), // Прямая передача без анонимной функции
+			profileapi.MiddlewareFunc(authnMiddleware.Verify()),
 		},
 	})
 
