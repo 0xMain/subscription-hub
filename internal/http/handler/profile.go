@@ -113,7 +113,7 @@ func (h *ProfileHandler) DeleteCurrentProfile(c *gin.Context) {
 			res.Error(c,
 				http.StatusConflict,
 				errs.MsgDeleteErr,
-				map[string]string{"base": errs.MsgCannotDeleteOwnerErr},
+				map[string][]string{"base": {errs.MsgCannotDeleteOwnerErr}},
 			)
 		case errors.Is(err, domain.ErrUserNotFound):
 			res.Error(c, http.StatusNotFound, errs.MsgUserNotFoundErr, nil)

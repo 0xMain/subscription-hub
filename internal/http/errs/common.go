@@ -2,7 +2,7 @@ package errs
 
 const (
 	MsgInternalErr      = "Внутренняя ошибка сервера"
-	MsgInvalidFormatErr = "Некорректный формат запроса"
+	MsgInvalidFormatErr = "Ошибка чтения запроса"
 	MsgValidationErr    = "Ошибка валидации"
 	MsgNotFoundErr      = "Ресурс не найден"
 

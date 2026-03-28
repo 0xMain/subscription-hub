@@ -70,14 +70,24 @@ func Start(ctx context.Context) error {
 	authSwag, _ := authapi.GetSwagger()
 	profileSwag, _ := profileapi.GetSwagger()
 
+	authValidator, err := middleware.NewOpenApiValidator(authSwag)
+	if err != nil {
+		log.Fatalf("Ошибка инициализации AUTH валидатора: %v", err)
+	}
+
+	profileValidator, err := middleware.NewOpenApiValidator(profileSwag)
+	if err != nil {
+		log.Fatalf("Ошибка инициализации PROFILE валидатора: %v", err)
+	}
+
 	// 2. Группа AUTH (публичная, но с валидацией контракта)
 	authGroup := router.Group("/")
-	authGroup.Use(middleware.OAPIValidator(authSwag))
+	authGroup.Use(authValidator.Handler())
 	authapi.RegisterHandlers(authGroup, authHandler)
 
 	// 3. Группа PROFILE (защищенная + валидация контракта)
 	profileGroup := router.Group("/")
-	profileGroup.Use(middleware.OAPIValidator(profileSwag))
+	profileGroup.Use(profileValidator.Handler())
 	profileapi.RegisterHandlersWithOptions(profileGroup, profileHandler, profileapi.GinServerOptions{
 		Middlewares: []profileapi.MiddlewareFunc{
 			profileapi.MiddlewareFunc(authnMiddleware.Verify()),

@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Error(c *gin.Context, status int, msg string, details map[string]string) {
+func Error(c *gin.Context, status int, msg string, details map[string][]string) {
 	resp := common.ErrorResponse{Error: msg}
 	if len(details) > 0 {
 		resp.Details = &details

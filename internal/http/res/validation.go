@@ -18,5 +18,5 @@ func Validation(c *gin.Context, err error) {
 			details[fe.Field()] = fmt.Sprintf("некорректное значение: %s", fe.Tag())
 		}
 	}
-	Error(c, http.StatusUnprocessableEntity, errs.MsgValidationErr, details)
+	Error(c, http.StatusUnprocessableEntity, errs.MsgValidationErr, nil)
 }
