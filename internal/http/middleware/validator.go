@@ -11,63 +11,112 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
-	"github.com/getkin/kin-openapi/routers/gorillamux"
 	"github.com/gin-gonic/gin"
 )
 
-type OpenApiValidator struct {
-	r routers.Router
+// defCheckers базовый набор правил для обработки ошибок валидации
+var defCheckers = []checker{
+	&requiredChecker{}, &typeChecker{}, &enumChecker{}, &limitChecker{}, &formatChecker{},
 }
+
+type (
+	OpenApiValidator struct {
+		cache    map[string]*route
+		checkers []checker
+	}
+
+	route struct {
+		path      string
+		pathItem  *openapi3.PathItem
+		operation *openapi3.Operation
+		method    string
+	}
+
+	checker interface {
+		check(msg string, schema *openapi3.Schema) (string, bool)
+	}
+)
 
 func NewOpenApiValidator(swagger *openapi3.T) (*OpenApiValidator, error) {
 	swagger.Servers = nil
 
-	r, err := gorillamux.NewRouter(swagger)
-	if err != nil {
-		return nil, err
+	v := &OpenApiValidator{
+		cache:    make(map[string]*route),
+		checkers: defCheckers,
 	}
 
-	return &OpenApiValidator{r: r}, nil
+	for path, pathItem := range swagger.Paths.Map() {
+		for method, operation := range pathItem.Operations() {
+			key := v.routeKey(method, path)
+
+			v.cache[key] = &route{
+				path:      path,
+				pathItem:  pathItem,
+				operation: operation,
+				method:    method,
+			}
+		}
+	}
+
+	return v, nil
+}
+
+func (v *OpenApiValidator) routeKey(method, path string) string {
+	var b strings.Builder
+
+	b.Grow(len(method) + 1 + len(path))
+
+	b.WriteString(method)
+	b.WriteByte(' ')
+
+	for i := 0; i < len(path); i++ {
+		switch char := path[i]; char {
+		case '{':
+			b.WriteByte(':')
+		case '}':
+			continue
+		default:
+			b.WriteByte(char)
+		}
+	}
+
+	return b.String()
 }
 
 func (v *OpenApiValidator) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if v.r == nil {
+		entry, ok := v.cache[v.routeKey(c.Request.Method, c.FullPath())]
+		if !ok {
 			c.Next()
 			return
 		}
 
-		route, pathParams, err := v.r.FindRoute(c.Request)
-		if err != nil {
-			c.Next()
-			return
+		params := make(map[string]string, len(c.Params))
+		for _, p := range c.Params {
+			params[p.Key] = p.Value
 		}
 
 		input := &openapi3filter.RequestValidationInput{
 			Request:    c.Request,
-			PathParams: pathParams,
-			Route:      route,
+			PathParams: params,
+
+			Route: &routers.Route{
+				Path:      entry.path,
+				PathItem:  entry.pathItem,
+				Method:    entry.method,
+				Operation: entry.operation,
+			},
+
 			Options: &openapi3filter.Options{
 				MultiError:         true,
 				AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
 			},
 		}
 
-		if err = openapi3filter.ValidateRequest(c.Request.Context(), input); err != nil {
-			details := make(map[string][]string)
+		if err := openapi3filter.ValidateRequest(c.Request.Context(), input); err != nil {
+			v.handleError(c, err)
 
-			v.unwrap(err, details, "")
-
-			if len(details) == 0 {
-				v.fallback(err.Error(), details, "")
-			}
-
-			if _, isBadBody := details["body"]; len(details) == 0 || isBadBody {
-				res.Error(c, http.StatusBadRequest, errs.MsgInvalidFormatErr, nil)
-				return
-			}
-
-			res.Error(c, http.StatusUnprocessableEntity, errs.MsgValidationErr, details)
+			c.Abort()
 			return
 		}
 
@@ -75,7 +124,24 @@ func (v *OpenApiValidator) Handler() gin.HandlerFunc {
 	}
 }
 
-// unwrap вытаскивает все ошибки из общей кучи
+func (v *OpenApiValidator) handleError(c *gin.Context, err error) {
+	details := make(map[string][]string)
+
+	v.unwrap(err, details, "")
+
+	if len(details) == 0 {
+		v.fallback(err.Error(), details, "")
+	}
+
+	if _, isBadBody := details["body"]; len(details) == 0 || isBadBody {
+		res.Error(c, http.StatusBadRequest, errs.MsgInvalidFormatErr, nil)
+		return
+	}
+
+	res.Error(c, http.StatusUnprocessableEntity, errs.MsgValidationErr, details)
+}
+
+// unwrap разбирает пачку ошибок по одной
 func (v *OpenApiValidator) unwrap(err error, details map[string][]string, loc string) {
 	if err == nil {
 		return
@@ -93,7 +159,7 @@ func (v *OpenApiValidator) unwrap(err error, details map[string][]string, loc st
 	v.resolve(err, details, loc)
 }
 
-// resolve находит конкретное сломанное поле
+// resolve вытаскивает из ошибки название поля и текст проблемы
 func (v *OpenApiValidator) resolve(err error, details map[string][]string, loc string) {
 	if err == nil {
 		return
@@ -102,7 +168,7 @@ func (v *OpenApiValidator) resolve(err error, details map[string][]string, loc s
 	var reqErr *openapi3filter.RequestError
 	if errors.As(err, &reqErr) {
 		if p := reqErr.Parameter; p != nil {
-			loc += p.In + "." + p.Name + "."
+			loc = v.formatParamLoc(loc, p.In, p.Name)
 		}
 
 		v.unwrap(reqErr.Err, details, loc)
@@ -122,27 +188,27 @@ func (v *OpenApiValidator) resolve(err error, details map[string][]string, loc s
 	v.report(details, loc, "", msg, err)
 }
 
-// fallback достает ошибки из текста, если структура не ясна («костыль» на крайний случай)
+// fallback ищет ошибки в тексте, если не удалось разобрать их структуру («костыль» на крайний случай)
 func (v *OpenApiValidator) fallback(errMsg string, details map[string][]string, loc string) {
-	for _, block := range strings.Split(errMsg, " | ") {
-		first, _, _ := strings.Cut(block, "\n")
-		first = strings.TrimSpace(first)
-		if first == "" {
-			continue
+	start := 0
+
+	for {
+		idx := strings.Index(errMsg[start:], " | ")
+
+		var block string
+		if idx == -1 {
+			block = errMsg[start:]
+		} else {
+			block = errMsg[start : start+idx]
 		}
 
-		currLoc := loc
-		for _, p := range [...]struct{ k, v string }{
-			{"in query", "query."}, {"in path", "path."}, {"in header", "header."}, {"in cookie", "cookie."},
-		} {
-			if strings.Contains(first, p.k) {
-				currLoc = p.v
-				break
-			}
+		v.parseBlock(block, details, loc)
+
+		if idx == -1 {
+			break
 		}
 
-		msg := v.formatMsg(first, nil)
-		v.report(details, currLoc, v.parsePath(first), msg, errors.New(first))
+		start += idx + 3
 	}
 }
 
@@ -176,6 +242,32 @@ func (v *OpenApiValidator) add(details map[string][]string, key, newMsg string) 
 	details[key] = append(details[key], newMsg)
 }
 
+func (v *OpenApiValidator) parseBlock(block string, details map[string][]string, loc string) {
+	if idx := strings.IndexByte(block, '\n'); idx != -1 {
+		block = block[:idx]
+	}
+	block = strings.TrimSpace(block)
+	if block == "" {
+		return
+	}
+
+	currLoc := loc
+	for _, p := range [...]struct{ k, v string }{
+		{"in query", "query."}, {"in path", "path."},
+		{"in header", "header."}, {"in cookie", "cookie."},
+	} {
+		if strings.Contains(block, p.k) {
+			currLoc = p.v
+			break
+		}
+	}
+
+	msg := v.formatMsg(block, nil)
+	field := v.parsePath(block)
+
+	v.report(details, currLoc, field, msg, errors.New(block))
+}
+
 func (v *OpenApiValidator) parsePath(block string) string {
 	_, content, found := strings.Cut(block, "\"")
 	if !found {
@@ -190,7 +282,21 @@ func (v *OpenApiValidator) parsePath(block string) string {
 	return strings.ReplaceAll(strings.TrimPrefix(path, "/"), "/", ".")
 }
 
-func (v *OpenApiValidator) formatPath(loc, field string) string {
+func (*OpenApiValidator) formatParamLoc(base, in, name string) string {
+	var b strings.Builder
+
+	b.Grow(len(base) + len(in) + len(name) + 2)
+
+	b.WriteString(base)
+	b.WriteString(in)
+	b.WriteByte('.')
+	b.WriteString(name)
+	b.WriteByte('.')
+
+	return b.String()
+}
+
+func (*OpenApiValidator) formatPath(loc, field string) string {
 	if path := strings.TrimSuffix(loc+field, "."); path != "" {
 		return path
 	}
@@ -205,7 +311,7 @@ func (v *OpenApiValidator) formatMsg(reason string, sch *openapi3.Schema) string
 		return errs.MsgGenericInvalidDetailErr
 	}
 
-	for _, c := range errorCheckers {
+	for _, c := range v.checkers {
 		if out, ok := c.check(msg, sch); ok {
 			return out
 		}
@@ -219,32 +325,58 @@ func (v *OpenApiValidator) clean(msg string) string {
 		msg = msg[:idx]
 	}
 
-	if prefix, tail, found := strings.Cut(msg, ": "); found {
-		lowPrefix := strings.ToLower(prefix)
-		if strings.Contains(lowPrefix, "error") || strings.Contains(lowPrefix, "at \"") {
-			if tail = strings.TrimSpace(tail); tail != "" {
-				msg = tail
-			}
+	for {
+		idx := strings.IndexByte(msg, ':')
+		if idx == -1 {
+			break
 		}
+
+		prefix := msg[:idx]
+
+		switch {
+		case
+			strings.Contains(prefix, "failed"),
+			strings.Contains(prefix, "error"),
+			strings.Contains(prefix, "at \""):
+
+			msg = strings.TrimSpace(msg[idx+1:])
+			continue
+		}
+		break
 	}
 
-	if strings.Contains(msg, "property \"") {
-		if start, after, ok := strings.Cut(msg, "\""); ok {
-			if _, end, ok := strings.Cut(after, "\""); ok {
-				msg = strings.Join(strings.Fields(start+end), " ")
-			}
-		}
+	if idx := strings.Index(msg, "property \""); idx != -1 {
+		msg = v.hideProperty(msg, idx)
 	}
 
 	return strings.ToLower(strings.TrimSpace(msg))
 }
 
-type errChecker interface {
-	check(msg string, schema *openapi3.Schema) (string, bool)
-}
+func (v *OpenApiValidator) hideProperty(msg string, idx int) string {
+	start := strings.IndexByte(msg[idx:], '"') + idx
+	if start == -1 {
+		return msg
+	}
 
-var errorCheckers = []errChecker{
-	&requiredChecker{}, &typeChecker{}, &enumChecker{}, &limitChecker{}, &formatChecker{},
+	end := strings.IndexByte(msg[start+1:], '"') + start + 1
+	if end == -1 {
+		return msg
+	}
+
+	size := len(msg) - (end - start + 1) + 1
+
+	var b strings.Builder
+	b.Grow(size)
+
+	b.WriteString(strings.TrimSpace(msg[:start]))
+
+	tail := strings.TrimSpace(msg[end+1:])
+	if tail != "" {
+		b.WriteByte(' ')
+		b.WriteString(tail)
+	}
+
+	return b.String()
 }
 
 func spec(sch *openapi3.Schema, key string) (string, bool) {

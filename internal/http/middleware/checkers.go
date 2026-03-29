@@ -10,6 +10,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
+// Ключи для поиска кастомных текстов ошибок в расширении x-errors схемы OpenAPI
 const (
 	specKeyType = "type"
 
