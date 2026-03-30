@@ -18,10 +18,8 @@ import (
 
 	"github.com/0xMain/subscription-hub/internal/service"
 
-	"github.com/gin-contrib/cors"
-	"github.com/go-playground/validator/v10"
-
 	"github.com/0xMain/subscription-hub/internal/config"
+	"github.com/gin-contrib/cors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,11 +49,10 @@ func Start(ctx context.Context) error {
 	profileService := service.NewProfileService(userRepo, userTenantRepo)
 
 	// 4. Транспорт (Middleware & Handlers)
-	authnMiddleware := middleware.NewAuthnMiddleware(authnService)
-	validate := validator.New()
+	authnMiddleware := middleware.NewAuthn(authnService)
 
-	authHandler := handler.NewAuthHandler(authnService, validate)
-	profileHandler := handler.NewProfileHandler(profileService, validate)
+	authHandler := handler.NewAuthHandler(authnService)
+	profileHandler := handler.NewProfileHandler(profileService)
 
 	// 5. Роутинг
 	router := gin.Default()

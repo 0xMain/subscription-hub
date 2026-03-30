@@ -16,7 +16,6 @@ import (
 	"github.com/0xMain/subscription-hub/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/oapi-codegen/runtime/types"
 )
 
@@ -29,12 +28,11 @@ type profileService interface {
 }
 
 type ProfileHandler struct {
-	svc      profileService
-	validate *validator.Validate
+	svc profileService
 }
 
-func NewProfileHandler(svc profileService, validate *validator.Validate) *ProfileHandler {
-	return &ProfileHandler{svc: svc, validate: validate}
+func NewProfileHandler(svc profileService) *ProfileHandler {
+	return &ProfileHandler{svc: svc}
 }
 
 func (h *ProfileHandler) GetCurrentProfile(c *gin.Context) {
@@ -113,7 +111,7 @@ func (h *ProfileHandler) DeleteCurrentProfile(c *gin.Context) {
 			res.Error(c,
 				http.StatusConflict,
 				errs.MsgDeleteErr,
-				map[string][]string{"base": {errs.MsgCannotDeleteOwnerErr}},
+				map[string][]string{"base": {errs.MsgCannotDeleteOwnerDetailErr}},
 			)
 		case errors.Is(err, domain.ErrUserNotFound):
 			res.Error(c, http.StatusNotFound, errs.MsgUserNotFoundErr, nil)

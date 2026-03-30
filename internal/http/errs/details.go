@@ -17,4 +17,6 @@ const (
 	MsgTooLargeDetailErr         = "слишком большое значение"
 	MsgGenericInvalidDetailErr   = "некорректные данные"
 	MsgInvalidStructureDetailErr = "некорректная структура запроса"
+
+	MsgCannotDeleteOwnerDetailErr = "Невозможно удалить профиль владельца организации"
 )

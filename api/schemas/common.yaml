@@ -16,7 +16,9 @@ components:
           x-order: 2
           description: "Дополнительные детали (если присутствуют)"
           additionalProperties:
-            type: string
+            type: array
+            items:
+              type: string
 
     PaginationMeta:
       type: object

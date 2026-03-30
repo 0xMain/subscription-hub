@@ -18,15 +18,15 @@ type accessChecker interface {
 	CheckAccess(ctx context.Context, userID, tenantID int64, allowedRoles ...domain.UserRole) error
 }
 
-type AuthzMiddleware struct {
+type Authz struct {
 	svc accessChecker
 }
 
-func NewAuthzMiddleware(svc accessChecker) *AuthzMiddleware {
-	return &AuthzMiddleware{svc: svc}
+func NewAuthz(svc accessChecker) *Authz {
+	return &Authz{svc: svc}
 }
 
-func (m *AuthzMiddleware) RequireRoles(allowedRoles ...domain.UserRole) gin.HandlerFunc {
+func (m *Authz) RequireRoles(allowedRoles ...domain.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, okUser := ctxutil.GetUserID(c.Request.Context())
 		if !okUser {
@@ -50,7 +50,7 @@ func (m *AuthzMiddleware) RequireRoles(allowedRoles ...domain.UserRole) gin.Hand
 	}
 }
 
-func (m *AuthzMiddleware) handleAccessError(c *gin.Context, err error) {
+func (m *Authz) handleAccessError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, service.ErrUserNotInTenant):
 		res.Error(c, http.StatusForbidden, errs.MsgUserNotInTenantErr, nil)
@@ -61,18 +61,18 @@ func (m *AuthzMiddleware) handleAccessError(c *gin.Context, err error) {
 	}
 }
 
-func (m *AuthzMiddleware) RequireOwner() gin.HandlerFunc {
+func (m *Authz) RequireOwner() gin.HandlerFunc {
 	return m.RequireRoles(domain.RoleOwner)
 }
 
-func (m *AuthzMiddleware) RequireAdmin() gin.HandlerFunc {
+func (m *Authz) RequireAdmin() gin.HandlerFunc {
 	return m.RequireRoles(domain.RoleOwner, domain.RoleAdmin)
 }
 
-func (m *AuthzMiddleware) RequireManager() gin.HandlerFunc {
+func (m *Authz) RequireManager() gin.HandlerFunc {
 	return m.RequireRoles(domain.RoleOwner, domain.RoleAdmin, domain.RoleManager)
 }
 
-func (m *AuthzMiddleware) RequireViewer() gin.HandlerFunc {
+func (m *Authz) RequireViewer() gin.HandlerFunc {
 	return m.RequireRoles(domain.RoleOwner, domain.RoleAdmin, domain.RoleManager, domain.RoleViewer)
 }

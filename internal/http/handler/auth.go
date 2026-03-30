@@ -15,7 +15,6 @@ import (
 	"github.com/0xMain/subscription-hub/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/oapi-codegen/runtime/types"
 )
 
@@ -25,12 +24,11 @@ type authService interface {
 }
 
 type AuthHandler struct {
-	svc      authService
-	validate *validator.Validate
+	svc authService
 }
 
-func NewAuthHandler(svc authService, validate *validator.Validate) *AuthHandler {
-	return &AuthHandler{svc: svc, validate: validate}
+func NewAuthHandler(svc authService) *AuthHandler {
+	return &AuthHandler{svc: svc}
 }
 
 func (h *AuthHandler) SignUp(c *gin.Context) {

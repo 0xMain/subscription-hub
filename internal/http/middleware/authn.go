@@ -17,15 +17,15 @@ type tokenValidator interface {
 	ValidateToken(token string) (jwt.MapClaims, error)
 }
 
-type AuthnMiddleware struct {
+type Authn struct {
 	svc tokenValidator
 }
 
-func NewAuthnMiddleware(svc tokenValidator) *AuthnMiddleware {
-	return &AuthnMiddleware{svc: svc}
+func NewAuthn(svc tokenValidator) *Authn {
+	return &Authn{svc: svc}
 }
 
-func (m *AuthnMiddleware) Verify() gin.HandlerFunc {
+func (m *Authn) Verify() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := extractToken(c)
 		if tokenString == "" {
