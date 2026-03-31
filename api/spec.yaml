@@ -21,7 +21,14 @@ paths:
   /profile:
     $ref: './paths/profile.yaml#/profile'
   /profile/full:
-    $ref: './paths/profile.yaml#/full'
+    $ref: './paths/profile.yaml#/profile_full'
+
+  /tenants:
+    $ref: './paths/tenant.yaml#/tenants'
+  /tenant:
+    $ref: './paths/tenant.yaml#/tenant'
+  /tenant/admins:
+    $ref: './paths/tenant.yaml#/tenant_admins'
 
 components:
   securitySchemes:

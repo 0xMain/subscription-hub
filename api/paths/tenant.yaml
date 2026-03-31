@@ -1,0 +1,356 @@
+tenants:
+  get:
+    tags:
+      - Компании
+    summary: Получить список компаний
+    operationId: GetTenantList
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        schema:
+          $ref: '../schemas/common.yaml#/components/schemas/PaginationLimit'
+        description: Количество компаний на одной странице
+      - name: offset
+        in: query
+        schema:
+          $ref: '../schemas/common.yaml#/components/schemas/PaginationOffset'
+        description: Смещение в списке компаний
+    responses:
+      '200':
+        description: Список компаний успешно получен
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/tenant.yaml#/components/schemas/TenantListResponse'
+      '400':
+        description: Ошибка обработки запроса
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка обработки запроса
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
+
+  post:
+    tags:
+      - Компании
+    summary: Создать компанию
+    operationId: CreateTenant
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/tenant.yaml#/components/schemas/CreateTenantRequest'
+    responses:
+      '201':
+        description: Компания успешно создана
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/tenant.yaml#/components/schemas/TenantResponse'
+      '400':
+        description: Ошибка обработки запроса
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка обработки запроса
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '409':
+        description: Компания с таким названием уже существует
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Компания с таким названием уже существует
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
+
+
+tenant:
+  get:
+    tags:
+      - Компании
+    summary: Получить данные текущей компании
+    operationId: GetCurrentTenant
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: Данные текущей компании успешно получены
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/tenant.yaml#/components/schemas/TenantResponse'
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '404':
+        description: Компания не найдена
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Компания не найдена
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
+
+  patch:
+    tags:
+      - Компании
+    summary: Обновить данные текущей компании
+    operationId: UpdateCurrentTenant
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/tenant.yaml#/components/schemas/UpdateTenantRequest'
+    responses:
+      '200':
+        description: Данные текущей компании успешно обновлены
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/tenant.yaml#/components/schemas/TenantResponse'
+      '400':
+        description: Ошибка обработки запроса
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка обработки запроса
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '403':
+        description: Недостаточно прав
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Недостаточно прав
+      '404':
+        description: Компания не найдена
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Компания не найдена
+      '409':
+        description: Компания с таким названием уже существует
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Компания с таким названием уже существует
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
+
+  delete:
+    tags:
+      - Компании
+    summary: Удалить текущую компанию
+    operationId: DeleteCurrentTenant
+    security:
+      - BearerAuth: []
+    responses:
+      '204':
+        description: Компания успешно удалена
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '403':
+        description: Недостаточно прав
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Недостаточно прав
+      '404':
+        description: Компания не найдена
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Компания не найдена
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
+
+
+tenant_admins:
+  get:
+    tags:
+     - Компании
+    summary: Получить список администраторов текущей компании
+    operationId: GetCurrentTenantAdminList
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        schema:
+          $ref: '../schemas/common.yaml#/components/schemas/PaginationLimit'
+        description: Количество администраторов на одной странице
+      - name: offset
+        in: query
+        schema:
+          $ref: '../schemas/common.yaml#/components/schemas/PaginationOffset'
+        description: Смещение в списке администраторов компании
+    responses:
+      '200':
+        description: Список администраторов компании успешно получен
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/tenant.yaml#/components/schemas/TenantAdminListResponse'
+      '400':
+        description: Ошибка обработки запроса
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка обработки запроса
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '404':
+        description: Компания не найдена
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Компания не найдена
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера

@@ -1,20 +1,15 @@
 package errs
 
 const (
-	MsgInternalErr      = "Внутренняя ошибка сервера"
-	MsgInvalidFormatErr = "Ошибка чтения запроса"
-	MsgValidationErr    = "Ошибка валидации"
-	MsgNotFoundErr      = "Ресурс не найден"
+	MsgInternalErr     = "Внутренняя ошибка сервера"
+	MsgForbiddenErr    = "Недостаточно прав"
+	MsgBadRequestErr   = "Ошибка обработки запроса"
+	MsgValidationErr   = "Ошибка валидации"
+	MsgUnauthorizedErr = "Требуется авторизация"
 
-	MsgUnauthorizedErr      = "Требуется авторизация"
-	MsgInvalidTokenErr      = "Невалидный или просроченный токен"
-	MsgMissingAuthHeaderErr = "Отсутствует заголовок авторизации"
-	MsgInvalidUserIDErr     = "Некорректный идентификатор пользователя в токене"
-
-	MsgForbiddenErr       = "У вас недостаточно прав для выполнения этого действия"
 	MsgUserNotInTenantErr = "Пользователь не принадлежит данной организации"
 
-	MsgUserExistsErr         = "Пользователь с таким email уже зарегистрирован"
+	MsgUserExistsErr         = "Пользователь с таким email уже существует"
 	MsgUserNotFoundErr       = "Пользователь не найден"
 	MsgDeleteErr             = "Ошибка удаления"
 	MsgInvalidCredentialsErr = "Неверный email или пароль"

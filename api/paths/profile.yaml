@@ -2,30 +2,38 @@ profile:
   get:
     tags:
       - Профиль
-    summary: Получить профиль текущего пользователя
+    summary: Получить данные текущего профиля
     operationId: GetCurrentProfile
     security:
       - BearerAuth: []
     responses:
       '200':
-        description: Успешное получение профиля
+        description: Данные профиля успешно получены
         content:
           application/json:
             schema:
               $ref: '../schemas/user.yaml#/components/schemas/UserResponse'
       '401':
-        description: Пользователь не авторизован или токен недействителен
+        description: Требуется авторизация
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Требуется авторизация"
+              error: Требуется авторизация
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
 
   patch:
     tags:
       - Профиль
-    summary: Обновить свой профиль
+    summary: Обновить данные текущего профиля
     operationId: UpdateCurrentProfile
     security:
       - BearerAuth: []
@@ -37,48 +45,64 @@ profile:
             $ref: '../schemas/profile.yaml#/components/schemas/UpdateProfileRequest'
     responses:
       '200':
-        description: Профиль успешно обновлён
+        description: Данные профиля успешно обновлены
         content:
           application/json:
             schema:
               $ref: '../schemas/user.yaml#/components/schemas/UserResponse'
       '400':
+        description: Ошибка обработки запроса
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка обработки запроса
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '422':
         description: Ошибка валидации
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Ошибка валидации"
+              error: Ошибка валидации
               details:
-                field_name: "Некорректное значение"
-      '401':
-        description: Пользователь не авторизован или токен недействителен
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Требуется авторизация"
+              error: Внутренняя ошибка сервера
 
   delete:
     tags:
       - Профиль
-    summary: Удалить свой профиль
+    summary: Удалить текущий профиль
     operationId: DeleteCurrentProfile
     security:
       - BearerAuth: []
     responses:
       '204':
-        description: Профиль успешно удалён
+        description: Профиль успешно удален
       '401':
-        description: Пользователь не авторизован или токен недействителен
+        description: Требуется авторизация
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Требуется авторизация"
+              error: Требуется авторизация
       '409':
         description: Невозможно удалить профиль владельца организации
         content:
@@ -86,15 +110,24 @@ profile:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Ошибка удаления"
+              error: Ошибка удаления
               details:
-                base: "Невозможно удалить профиль владельца организации"
+                base: невозможно удалить профиль владельца организации
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
 
-full:
+
+profile_full:
   get:
     tags:
       - Профиль
-    summary: Получить полный профиль с компаниями и ролями
+    summary: Получить полные данные текущего профиля
     operationId: GetFullCurrentProfile
     security:
       - BearerAuth: []
@@ -102,30 +135,51 @@ full:
       - name: tenants_limit
         in: query
         schema:
-          type: integer
-          default: 10
-          minimum: 1
-          maximum: 100
+          $ref: '../schemas/common.yaml#/components/schemas/PaginationLimit'
         description: Количество компаний в списке
       - name: tenants_offset
         in: query
         schema:
-          type: integer
-          default: 0
-          minimum: 0
+          $ref: '../schemas/common.yaml#/components/schemas/PaginationOffset'
         description: Смещение для пагинации компаний
     responses:
       '200':
-        description: Успешное получение профиля с компаниями
+        description: Полные данные профиля успешно получены
         content:
           application/json:
             schema:
               $ref: '../schemas/profile.yaml#/components/schemas/FullProfileResponse'
-      '401':
-        description: Пользователь не авторизован или токен недействителен
+      '400':
+        description: Ошибка обработки запроса
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Требуется авторизация"
+              error: Ошибка обработки запроса
+      '401':
+        description: Требуется авторизация
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Требуется авторизация
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера

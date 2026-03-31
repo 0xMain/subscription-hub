@@ -1,0 +1,12 @@
+package: tenantapi
+generate:
+  gin-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  include-tags:
+    - Компании
+output: internal/http/gen/tenantapi/server.gen.go
+import-mapping:
+  "../schemas/tenant.yaml": "-"
+  "../schemas/common.yaml": github.com/0xMain/subscription-hub/internal/http/gen/common

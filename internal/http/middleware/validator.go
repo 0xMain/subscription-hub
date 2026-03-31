@@ -22,6 +22,7 @@ var defCheckers = []checker{
 type (
 	OpenApiValidator struct {
 		cache    map[string]*route
+		swagger  *openapi3.T
 		checkers []checker
 	}
 
@@ -42,6 +43,7 @@ func NewOpenApiValidator(swagger *openapi3.T) (*OpenApiValidator, error) {
 
 	v := &OpenApiValidator{
 		cache:    make(map[string]*route),
+		swagger:  swagger,
 		checkers: defCheckers,
 	}
 
@@ -101,6 +103,7 @@ func (v *OpenApiValidator) Handler() gin.HandlerFunc {
 			PathParams: params,
 
 			Route: &routers.Route{
+				Spec:      v.swagger,
 				Path:      entry.path,
 				PathItem:  entry.pathItem,
 				Method:    entry.method,
@@ -134,7 +137,7 @@ func (v *OpenApiValidator) handleError(c *gin.Context, err error) {
 	}
 
 	if _, isBadBody := details["body"]; len(details) == 0 || isBadBody {
-		res.Error(c, http.StatusBadRequest, errs.MsgInvalidFormatErr, nil)
+		res.Error(c, http.StatusBadRequest, errs.MsgBadRequestErr, nil)
 		return
 	}
 

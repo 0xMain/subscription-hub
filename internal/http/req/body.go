@@ -11,7 +11,7 @@ import (
 
 func Body(c *gin.Context, obj any) bool {
 	if err := c.ShouldBindWith(obj, binding.JSON); err != nil {
-		res.Error(c, http.StatusBadRequest, errs.MsgInvalidFormatErr, nil)
+		res.Error(c, http.StatusBadRequest, errs.MsgBadRequestErr, nil)
 
 		return false
 	}

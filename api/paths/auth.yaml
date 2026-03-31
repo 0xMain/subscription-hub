@@ -2,7 +2,7 @@ signup:
   post:
     tags:
       - Аутентификация
-    summary: Регистрация нового пользователя
+    summary: Зарегистрировать нового пользователя
     operationId: SignUp
     security: []
     requestBody:
@@ -19,15 +19,13 @@ signup:
             schema:
               $ref: '../schemas/user.yaml#/components/schemas/UserResponse'
       '400':
-        description: Ошибка валидации
+        description: Ошибка обработки запроса
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Ошибка валидации"
-              details:
-                field_name: "Некорректное значение"
+              error: Ошибка обработки запроса
       '409':
         description: Пользователь с таким email уже зарегистрирован
         content:
@@ -35,13 +33,32 @@ signup:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Пользователь с таким email уже зарегистрирован"
+              error: Пользователь с таким email уже зарегистрирован
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера
+
 
 signin:
   post:
     tags:
       - Аутентификация
-    summary: Вход в систему
+    summary: Войти в систему
     operationId: SignIn
     security: []
     requestBody:
@@ -52,21 +69,19 @@ signin:
             $ref: '../schemas/auth.yaml#/components/schemas/SignInRequest'
     responses:
       '200':
-        description: Успешный вход
+        description: Вход выполнен успешно
         content:
           application/json:
             schema:
               $ref: '../schemas/auth.yaml#/components/schemas/SignInResponse'
       '400':
-        description: Ошибка валидации
+        description: Ошибка обработки запроса
         content:
           application/json:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Ошибка валидации"
-              details:
-                field_name: "Некорректное значение"
+              error: Ошибка обработки запроса
       '401':
         description: Неверный email или пароль
         content:
@@ -74,4 +89,22 @@ signin:
             schema:
               $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
             example:
-              error: "Неверный email или пароль"
+              error: Неверный email или пароль
+      '422':
+        description: Ошибка валидации
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Ошибка валидации
+              details:
+                path: некорректные данные
+      '500':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/ErrorResponse'
+            example:
+              error: Внутренняя ошибка сервера

@@ -1,0 +1,125 @@
+components:
+  schemas:
+
+    TenantResponse:
+      type: object
+      description: Основная информация о компании
+      required:
+        - id
+        - name
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-go-name: ID
+          x-order: 1
+          description: Уникальный идентификатор компании
+          example: 1
+        name:
+          type: string
+          x-order: 2
+          description: Название компании
+          example: Ромашка
+        created_at:
+          type: string
+          format: date-time
+          x-order: 3
+          description: Дата и время создания компании
+          example: "2026-01-01T12:00:00Z"
+
+    CreateTenantRequest:
+      type: object
+      description: Данные для создания новой компании
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+          x-order: 1
+          description: Название компании
+          example: Ромашка
+
+    UpdateTenantRequest:
+      type: object
+      description: Данные для обновления компании
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+          x-order: 1
+          description: Новое название компании
+          example: Новая Ромашка
+
+    TenantMemberResponse:
+      type: object
+      description: Информация о члене компании
+      required:
+        - user
+        - role
+      properties:
+        user:
+          allOf:
+            - $ref: './user.yaml#/components/schemas/UserResponse'
+          x-order: 1
+        role:
+          type: string
+          enum:
+            - owner
+            - admin
+          x-order: 2
+          description: Роль пользователя в компании
+          example: admin
+
+    TenantListResponse:
+      type: object
+      description: Список компаний с пагинацией
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          x-order: 1
+          description: Список компаний
+          items:
+            $ref: '#/components/schemas/TenantResponse'
+        pagination:
+          allOf:
+            - $ref: './common.yaml#/components/schemas/PaginationMeta'
+          x-order: 2
+
+    TenantAdminListResponse:
+      type: object
+      description: Список администраторов компании
+      required:
+        - tenant
+        - admins
+      properties:
+        tenant:
+          allOf:
+            - $ref: '#/components/schemas/TenantResponse'
+          x-order: 1
+          description: Информация о компании
+        admins:
+          type: object
+          x-order: 2
+          description: Список администраторов с пагинацией
+          required:
+            - items
+            - pagination
+          properties:
+            items:
+              type: array
+              x-order: 1
+              description: Список администраторов компании
+              items:
+                $ref: '#/components/schemas/TenantMemberResponse'
+            pagination:
+              allOf:
+                - $ref: './common.yaml#/components/schemas/PaginationMeta'
+              x-order: 2
+              description: Метаданные пагинации для списка администраторов

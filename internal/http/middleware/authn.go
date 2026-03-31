@@ -35,19 +35,19 @@ func (m *Authn) Verify() gin.HandlerFunc {
 
 		claims, err := m.svc.ValidateToken(tokenString)
 		if err != nil {
-			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidTokenErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgUnauthorizedErr, nil)
 			return
 		}
 
 		sub, err := claims.GetSubject()
 		if err != nil || sub == "" {
-			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidUserIDErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgUnauthorizedErr, nil)
 			return
 		}
 
 		userID, err := strconv.ParseInt(sub, 10, 64)
 		if err != nil {
-			res.Error(c, http.StatusUnauthorized, errs.MsgInvalidUserIDErr, nil)
+			res.Error(c, http.StatusUnauthorized, errs.MsgUnauthorizedErr, nil)
 			return
 		}
 

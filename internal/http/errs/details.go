@@ -18,5 +18,5 @@ const (
 	MsgGenericInvalidDetailErr   = "некорректные данные"
 	MsgInvalidStructureDetailErr = "некорректная структура запроса"
 
-	MsgCannotDeleteOwnerDetailErr = "Невозможно удалить профиль владельца организации"
+	MsgCannotDeleteOwnerDetailErr = "невозможно удалить профиль владельца организации"
 )

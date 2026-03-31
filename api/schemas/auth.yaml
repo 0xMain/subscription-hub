@@ -2,9 +2,8 @@ components:
   schemas:
 
     SignUpRequest:
-      x-oapi-codegen-extra-tags: ["Аутентификация"]
       type: object
-      description: "Данные для регистрации нового пользователя"
+      description: Данные для регистрации нового пользователя
       required:
         - email
         - first_name
@@ -16,33 +15,33 @@ components:
           format: email
           pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 1
-          description: "Адрес электронной почты (логин)"
-          example: "name@mail.ru"
+          description: Адрес электронной почты (логин)
+          example: user@example.com
         first_name:
           type: string
           minLength: 2
           maxLength: 100
           x-order: 2
-          description: "Имя пользователя"
-          example: "firstname"
+          description: Имя пользователя
+          example: Иван
         last_name:
           type: string
           minLength: 2
           maxLength: 100
           x-order: 3
-          description: "Фамилия пользователя"
-          example: "lastname"
+          description: Фамилия пользователя
+          example: Иванов
         password:
           type: string
           format: password
           minLength: 8
           x-order: 4
-          example: "12345678"
+          description: Пароль (минимум 8 символов)
+          example: "********"
 
     SignInRequest:
-      x-oapi-codegen-extra-tags: ["Аутентификация"]
       type: object
-      description: "Учетные данные для входа в систему"
+      description: Учетные данные для входа в систему
       required:
         - email
         - password
@@ -52,19 +51,18 @@ components:
           format: email
           pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 1
-          description: "Адрес электронной почты (логин), указанный при регистрации"
-          example: "name@mail.ru"
+          description: Адрес электронной почты (логин), указанный при регистрации
+          example: user@example.com
         password:
           type: string
           format: password
           x-order: 2
-          description: "Текущий пароль пользователя"
-          example: "12345678"
+          description: Пароль
+          example: "********"
 
     SignInResponse:
-      x-oapi-codegen-extra-tags: ["Аутентификация"]
       type: object
-      description: "Результат успешной аутентификации"
+      description: Результат успешной аутентификации
       required:
         - access_token
         - user
@@ -72,9 +70,9 @@ components:
         access_token:
           type: string
           x-order: 1
-          description: "JWT-токен для доступа к защищенным ресурсам"
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: JWT-токен для доступа к защищенным ресурсам
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzUwNjI3ODIsImlhdCI6MTc3NDk3NjM4Miwic3ViIjoiMSJ9._Wo5e-U10kMi29_ME9lV3hBy_xawlWDwKEnbjolq5OI
         user:
-          x-order: 2
           allOf:
             - $ref: './user.yaml#/components/schemas/UserResponse'
+          x-order: 2

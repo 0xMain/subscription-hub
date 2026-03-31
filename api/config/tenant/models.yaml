@@ -1,9 +1,9 @@
-package: profileapi
+package: tenantapi
 generate:
   models: true
 output-options:
   skip-prune: true
-output: internal/http/gen/profileapi/models.gen.go
+output: internal/http/gen/tenantapi/models.gen.go
 import-mapping:
   "./common.yaml": github.com/0xMain/subscription-hub/internal/http/gen/common
-  "./tenant.yaml": github.com/0xMain/subscription-hub/internal/http/gen/tenantapi
+  "./user.yaml": github.com/0xMain/subscription-hub/internal/http/gen/user
