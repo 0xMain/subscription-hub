@@ -25,6 +25,7 @@ generate:
 	@$(call gen_models,user)
 	@$(call gen_api,auth)
 	@$(call gen_api,profile)
+	@$(call gen_api,tenant)
 	@echo "✨ Все сгенерировано"
 
 clean:

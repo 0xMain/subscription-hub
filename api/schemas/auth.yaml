@@ -16,7 +16,7 @@ components:
           pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 1
           description: Адрес электронной почты (логин)
-          example: user@example.com
+          example: ivan.ivanov@example.com
         first_name:
           type: string
           minLength: 2
@@ -52,7 +52,7 @@ components:
           pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
           x-order: 1
           description: Адрес электронной почты (логин), указанный при регистрации
-          example: user@example.com
+          example: ivan.ivanov@example.com
         password:
           type: string
           format: password
