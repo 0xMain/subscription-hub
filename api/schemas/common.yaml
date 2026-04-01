@@ -50,13 +50,16 @@ components:
       default: 10
       minimum: 1
       maximum: 100
+      description: Максимальное количество элементов на одной странице
 
     PaginationOffset:
       type: integer
       default: 0
       minimum: 0
+      description: Смещение от начала списка
 
     SearchQuery:
       type: string
       minLength: 2
       maxLength: 255
+      description: Строка для поиска по текстовым полям
