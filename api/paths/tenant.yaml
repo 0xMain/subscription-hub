@@ -7,6 +7,11 @@ tenants:
     security:
       - BearerAuth: []
     parameters:
+      - name: name
+        in: query
+        schema:
+          $ref: '../schemas/common.yaml#/components/schemas/SearchQuery'
+        description: Название компании для поиска
       - name: limit
         in: query
         schema:

@@ -55,3 +55,8 @@ components:
       type: integer
       default: 0
       minimum: 0
+
+    SearchQuery:
+      type: string
+      minLength: 2
+      maxLength: 255
