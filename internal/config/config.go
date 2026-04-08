@@ -1,84 +1,68 @@
 package config
 
-import (
-	"context"
-	"errors"
-	"fmt"
-	"log"
+import "fmt"
 
-	"github.com/spf13/viper"
-)
+const scrubbed = "***"
 
-type Config struct {
-	Server struct {
+type (
+	Config struct {
+		Server   ServerConfig   `mapstructure:"server"`
+		Postgres PostgresConfig `mapstructure:"postgres"`
+		Redis    RedisConfig    `mapstructure:"redis"`
+		JWT      JWTConfig      `mapstructure:"jwt"`
+	}
+
+	ServerConfig struct {
 		Host string `mapstructure:"host"`
 		Port string `mapstructure:"port"`
-	} `mapstructure:"server"`
+	}
 
-	Database struct {
+	PostgresConfig struct {
 		Name     string `mapstructure:"name"`
 		Host     string `mapstructure:"host"`
 		Port     string `mapstructure:"port"`
 		User     string `mapstructure:"user"`
-		Password string `mapstructure:"password"`
-	} `mapstructure:"database"`
-
-	JWT struct {
-		Secret string `mapstructure:"secret"`
-	} `mapstructure:"jwt"`
-}
-
-func Load(ctx context.Context) (*Config, error) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config")
-
-	viper.SetDefault("server.host", "localhost")
-	viper.SetDefault("server.port", "8080")
-
-	viper.SetDefault("database.name", "mail_queue")
-	viper.SetDefault("database.host", "localhost")
-	viper.SetDefault("database.port", "5433")
-	viper.SetDefault("database.user", "admin")
-	viper.SetDefault("database.password", "admin")
-
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+		Password string `mapstructure:"-"`
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
-		var configFileNotFound viper.ConfigFileNotFoundError
-		if errors.As(err, &configFileNotFound) {
-			log.Printf("файл конфигурации не найден, используются значения по умолчанию")
-		} else {
-			return nil, fmt.Errorf("ошибка чтения конфигурации: %w", err)
-		}
+	RedisConfig struct {
+		Addr     string `mapstructure:"addr"`
+		Password string `mapstructure:"-"`
+		DB       int    `mapstructure:"db"`
 	}
 
-	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("ошибка преобразования конфигурации: %w", err)
+	JWTConfig struct {
+		Secret string `mapstructure:"-"`
 	}
+)
 
-	if cfg.JWT.Secret == "" {
-		return nil, fmt.Errorf("jwt секрет не указан")
-	}
-
-	return &cfg, nil
-}
-
-func (config *Config) DSN() string {
+func (c *Config) DSN() string {
+	p := c.Postgres
 	return fmt.Sprintf("dbname=%s host=%s port=%s user=%s password=%s sslmode=disable",
-		config.Database.Name,
-		config.Database.Host,
-		config.Database.Port,
-		config.Database.User,
-		config.Database.Password,
+		p.Name, p.Host, p.Port, p.User, p.Password,
 	)
 }
 
-func (config *Config) JWTSecret() string {
-	return config.JWT.Secret
+func (c *Config) JWTSecret() string {
+	return c.JWT.Secret
+}
+
+func (c *Config) String() string {
+	return fmt.Sprintf("{Server:%s Postgres:%s Redis:%s JWT:%s}", c.Server, c.Postgres, c.Redis, c.JWT)
+}
+
+func (s ServerConfig) String() string {
+	return fmt.Sprintf("{Host:%s Port:%s}", s.Host, s.Port)
+}
+
+func (p PostgresConfig) String() string {
+	return fmt.Sprintf("{Name:%s Host:%s Port:%s User:%s Password:%s}", p.Name, p.Host, p.Port, p.User, scrubbed)
+}
+
+func (r RedisConfig) String() string {
+	return fmt.Sprintf("{Addr:%s DB:%d Password:%s}", r.Addr, r.DB, scrubbed)
+}
+
+func (j JWTConfig) String() string {
+	return fmt.Sprintf("{Secret:%s}", scrubbed)
 }

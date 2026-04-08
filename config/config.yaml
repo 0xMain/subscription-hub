@@ -2,12 +2,12 @@ server:
   host: localhost
   port: 8080
 
-database:
+postgres:
   name: subscription_hub
   host: localhost
   port: 5432
   user: admin
-  password: admin
 
-jwt:
-  secret: qJ7zX3k9L2pR5mN8vB4wY6cF1dA8eG5hJ2kM4nP7
+redis:
+  addr: localhost:6379
+  db: 0

@@ -5,6 +5,7 @@ import (
 	"github.com/0xMain/subscription-hub/internal/http/gen/profileapi"
 	"github.com/0xMain/subscription-hub/internal/http/middleware"
 	"github.com/0xMain/subscription-hub/internal/infra/postgres"
+	"github.com/0xMain/subscription-hub/internal/infra/redis"
 	"github.com/0xMain/subscription-hub/internal/pkg/tx"
 	"github.com/0xMain/subscription-hub/internal/repository"
 
@@ -30,13 +31,30 @@ func Start(ctx context.Context) error {
 		return err
 	}
 
-	db, err := postgres.New(cfg.DSN())
+	initCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	db, err := postgres.New(initCtx, postgres.Config{DSN: cfg.DSN()})
 	if err != nil {
-		return fmt.Errorf("ошибка подключения к БД: %w", err)
+		return fmt.Errorf("подключение к Postgres: %w", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Printf("ошибка при закрытии БД: %v", err)
+			log.Printf("закрытие Postgres: %v", err)
+		}
+	}()
+
+	rdb, err := redis.New(initCtx, redis.Config{
+		Addr:     cfg.Redis.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+	if err != nil {
+		return fmt.Errorf("подключение к Redis: %w", err)
+	}
+	defer func() {
+		if err := rdb.Close(); err != nil {
+			log.Printf("закрытие Redis: %v", err)
 		}
 	}()
 
